@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>HoneyVault</title>
+<style>
+:root{--bg:#ffffff;--card:#ffffff;--ink:#241c12;--mute:#6b5f50;--line:#ddd3c4;--acc:#b8620a;--ok:#1d7a4d;--bad:#b3261e;--f:#fbf9f5}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Segoe UI",system-ui,sans-serif}
+header{padding:22px 18px 6px;max-width:900px;margin:auto}h1{font:600 28px Georgia,serif;margin:0}
+.sub{color:var(--mute);margin:4px 0 0}
+nav{max-width:900px;margin:12px auto 0;padding:0 18px;display:flex;gap:6px;flex-wrap:wrap}
+nav button{background:transparent;color:var(--ink);border:1px solid var(--line)}nav button.on{background:var(--acc);color:#fff;border-color:var(--acc)}
+main{max-width:900px;margin:auto;padding:12px 18px 50px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:14px}
+h2{font-size:17px;margin:0 0 10px}label{display:block;margin:10px 0 4px;color:var(--mute);font-size:13.5px}
+input,select{width:100%;font:inherit;padding:8px 10px;border:1px solid var(--line);border-radius:8px;background:var(--f);color:var(--ink)}
+button{font:inherit;padding:8px 14px;border-radius:8px;border:1px solid var(--acc);background:var(--acc);color:#fff;cursor:pointer;margin-top:12px}
+button.s{padding:3px 10px;margin:0;font-size:13px}button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+.meter{height:8px;border-radius:4px;background:var(--line);margin-top:6px;overflow:hidden}.meter i{display:block;height:100%;width:0;transition:.2s}
+.msg{margin-top:10px;font-weight:600}.ok{color:var(--ok)}.bad{color:var(--bad)}
+table{width:100%;border-collapse:collapse;font-size:13.5px}th,td{text-align:left;padding:6px 8px;border-bottom:1px solid var(--line);vertical-align:top}
+td.m{font-family:Consolas,monospace;font-size:12.5px;overflow-wrap:anywhere}.w{overflow-x:auto}
+.cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}@media(max-width:640px){.cols{grid-template-columns:1fr}}
+.pill{display:inline-block;padding:1px 8px;border:1px solid var(--line);border-radius:10px;font-size:12px;color:var(--mute)}
+.hid{display:none}.note{color:var(--mute);font-size:13.5px}
+</style></head><body>
+<header><h1>HoneyVault</h1><p class="sub">A password vault that gives attackers plausible fake secrets instead of an error message.</p></header>
+<nav id="nav"><button data-t="acct" class="on">Account</button><button data-t="vault">Vault</button><button data-t="lab">Attack lab</button><button data-t="how">How it works</button></nav>
+<main>
+<div id="acct" class="tab">
+ <div class="cols">
+  <div class="card"><h2>Register</h2><label for="ru">Username</label><input id="ru" autocomplete="off">
+   <label for="rp">Password</label><input id="rp" type="password" autocomplete="new-password">
+   <div class="meter"><i id="rm"></i></div><div class="note" id="rl">Very Weak</div>
+   <button id="reg">Create account</button><div class="msg" id="rmsg"></div></div>
+  <div class="card"><h2>Log in</h2><label for="lu">Username</label><input id="lu" autocomplete="off">
+   <label for="lp">Password</label><input id="lp" type="password" autocomplete="current-password">
+   <button id="log">Log in</button><div class="msg" id="lmsg"></div></div>
+ </div></div>
+
+<div id="vault" class="tab hid">
+ <div class="card"><h2>Add a secret</h2><div class="cols"><div><label for="vl">Label</label><input id="vl" placeholder="e.g. Bank card"></div>
+  <div><label for="vt">Type</label><select id="vt"><option value="pin">PIN (4 digits)</option><option value="card">Card number (16 digits, Luhn valid)</option><option value="apikey">API key (24 letters/digits)</option><option value="seed">Recovery phrase (6 words)</option></select></div></div>
+  <label for="vs">Secret <button class="s" id="ex" type="button">Fill example</button></label><input id="vs" autocomplete="off">
+  <div class="cols"><div><label for="vp">Vault passphrase</label><input id="vp" type="password" autocomplete="off"><div class="meter"><i id="vm"></i></div><div class="note" id="vlb">Very Weak</div></div>
+  <div><label for="vmode">Protection mode</label><select id="vmode"><option value="honey">Honey encryption (no error on wrong passphrase)</option><option value="standard">Standard (authentication tag)</option></select></div></div>
+  <button id="add">Encrypt and store</button><div class="msg" id="amsg"></div></div>
+ <div class="card"><h2>Your secrets</h2><div class="w"><table><thead><tr><th>Label</th><th>Type</th><th>Mode</th><th></th></tr></thead><tbody id="list"></tbody></table></div>
+  <div class="msg" id="omsg"></div></div></div>
+
+<div id="lab" class="tab hid">
+ <div class="card"><h2>Dictionary attack simulator</h2>
+  <p class="note">Plays the attacker: the server tries 34 common passwords against a stored entry and shows what the attacker would see. Choose an entry, then optionally enter your real passphrase to mark which guess was correct.</p>
+  <label for="ae">Entry</label><select id="ae"></select>
+  <label for="ap">Your real passphrase (optional, only used to label the true guess, never stored)</label><input id="ap" type="password" autocomplete="off">
+  <button id="run">Run attack</button><div class="msg" id="sum"></div>
+  <div class="w"><table><thead><tr><th>Guess</th><th>Attacker sees</th><th></th></tr></thead><tbody id="res"></tbody></table></div></div></div>
+
+<div id="how" class="tab hid"><div class="card"><h2>How it works</h2>
+ <p><b>Accounts.</b> Passwords are never stored. The server keeps a random 16-byte salt and a PBKDF2-HMAC-SHA256 hash (200,000 iterations).</p>
+ <p><b>Vault key.</b> Your vault passphrase goes through scrypt with a fresh salt to give a 256-bit key.</p>
+ <p><b>Standard mode.</b> Ciphertext plus an HMAC tag. A wrong passphrase fails the tag, so an attacker knows exactly when a guess is right.</p>
+ <p><b>Honey mode.</b> No tag. The secret is turned into numbers, XORed with a keystream (SHAKE-256), and any key decodes back into a well-formed secret of the same type: a wrong passphrase gives another random-looking PIN, key or phrase. Card numbers are rebuilt with a Luhn check digit, so fakes pass the same validity test as the real one.</p>
+ <p class="note">Limits: honey encryption only protects structured secrets, and it does not help if the attacker has other ways to check a guess, such as logging in to the real bank. Use a strong passphrase as well.</p></div></div>
+</main>
+<script>
+var $=function(i){return document.getElementById(i)},tok=sessionStorage.getItem("tok"),INFO=null;
+var EX={pin:"4821",card:"4111111111111111",apikey:"Xk29fQ7LmP3vR8tZ1nB5cD0w",seed:"river stone amber coral delta flint"};
+var LAB=["Very Weak","Very Weak","Weak","Moderate","Strong","Very Strong"],COL=["#b3261e","#b3261e","#c8501a","#b07a00","#4f8a1f","#1d7a4d"];
+function esc(t){return String(t).replace(/[&<>"]/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]})}
+function score(p){return[p.length>=8,/[A-Z]/.test(p),/[a-z]/.test(p),/\d/.test(p),/[!@#$%^&*(),.?":{}|<>]/.test(p)].filter(Boolean).length}
+function meter(inp,bar,lab){$(inp).oninput=function(){var s=score(this.value);$(bar).style.width=s*20+"%";$(bar).style.background=COL[s];$(lab).textContent=LAB[s]}}
+meter("rp","rm","rl");meter("vp","vm","vlb");
+async function api(path,body,method){
+ var o={method:method||(body?"POST":"GET"),headers:{"Content-Type":"application/json"}};
+ if(tok)o.headers.Authorization="Bearer "+tok;if(body)o.body=JSON.stringify(body);
+ var r=await fetch("/api/"+path,o),j=await r.json();if(!r.ok)throw new Error(j.error||"Request failed");return j}
+function say(id,t,ok){var e=$(id);e.textContent=t;e.className="msg "+(ok?"ok":"bad")}
+document.querySelectorAll("nav button").forEach(function(b){b.onclick=function(){
+ document.querySelectorAll("nav button").forEach(function(x){x.classList.toggle("on",x===b)});
+ document.querySelectorAll(".tab").forEach(function(t){t.classList.toggle("hid",t.id!==b.dataset.t)});
+ if(b.dataset.t==="vault"||b.dataset.t==="lab")refresh()}});
+$("reg").onclick=async function(){try{await api("register",{username:$("ru").value,password:$("rp").value});say("rmsg","Account created. You can log in now.",1)}catch(e){say("rmsg",e.message)}};
+$("log").onclick=async function(){try{var j=await api("login",{username:$("lu").value,password:$("lp").value});tok=j.token;sessionStorage.setItem("tok",tok);say("lmsg","Logged in as "+j.username,1)}catch(e){say("lmsg",e.message)}};
+$("ex").onclick=function(){$("vs").value=EX[$("vt").value]};
+$("add").onclick=async function(){try{await api("vault",{label:$("vl").value,type:$("vt").value,secret:$("vs").value,passphrase:$("vp").value,mode:$("vmode").value});$("vs").value="";say("amsg","Encrypted and stored. The plaintext was not saved.",1);refresh()}catch(e){say("amsg",e.message)}};
+async function refresh(){
+ if(!tok)return;
+ try{var j=await api("vault");
+  $("list").innerHTML=j.entries.map(function(e){return"<tr><td>"+esc(e.label)+"</td><td>"+e.type+"</td><td><span class='pill'>"+e.mode+"</span></td><td><button class='s' data-id='"+e.id+"'>Open</button></td></tr>"}).join("")||"<tr><td colspan='4' class='note'>Nothing stored yet.</td></tr>";
+  $("ae").innerHTML=j.entries.map(function(e){return"<option value='"+e.id+"'>"+esc(e.label)+" ("+e.mode+")</option>"}).join("")}catch(e){}}
+$("list").onclick=async function(ev){var b=ev.target.closest("button");if(!b)return;var p=prompt("Vault passphrase:");if(p===null)return;
+ try{var j=await api("vault/open",{id:+b.dataset.id,passphrase:p});say("omsg","Decrypted value: "+j.value+"   (in honey mode this may be a decoy if the passphrase was wrong)",1)}catch(e){say("omsg",e.message)}};
+$("run").onclick=async function(){try{
+ var j=await api("attack",{id:+$("ae").value,owner_passphrase:$("ap").value||null});
+ $("sum").className="msg "+(j.mode==="honey"?"ok":"bad");
+ $("sum").textContent=j.mode==="honey"?"Honey mode: "+j.plausible+" of "+j.tried+" guesses returned a plausible-looking secret. The attacker cannot tell which one is real.":"Standard mode: the authentication tag singles out the right guess"+(j.plausible?" ("+j.plausible+" match found: passphrase cracked).":": none of the guesses matched, but each wrong guess is clearly rejected.");
+ $("res").innerHTML=j.guesses.map(function(g){return"<tr><td class='m'>"+esc(g.guess)+"</td><td class='m'>"+(g.output===null?"<span class='bad'>rejected: wrong passphrase</span>":esc(g.output))+"</td><td>"+(g.truth?"<span class='pill'>your real passphrase</span>":"")+"</td></tr>"}).join("")}catch(e){say("sum",e.message)}};
+refresh();
+</script></body></html>
